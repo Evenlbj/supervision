@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Hôtes{% endblock %}
+{% block head %}
+<style>
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:11px;}
+.hc{background:var(--c1);border:1px solid var(--b);border-radius:11px;padding:13px;transition:border-color .14s;}
+.hc:hover{border-color:rgba(79,142,247,.3);}
+.led{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.led.up{background:#10b981;box-shadow:0 0 6px rgba(16,185,129,.5);}
+.led.down{background:#ef4444;}
+.led.unknown{background:#3a5070;}
+.pt{font-family:var(--mono);font-size:.58rem;padding:2px 5px;border-radius:4px;background:rgba(16,185,129,.07);color:#34d399;border:1px solid rgba(16,185,129,.12);}
+</style>
+{% endblock %}
+{% block content %}
+{% if hosts %}
+<div class="grid">
+  {% for h in hosts %}
+  <div class="hc">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div class="led {{ h.status or 'unknown' }}"></div>
+      <div style="min-width:0;flex:1;">
+        <div style="font-weight:700;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ h.hostname or h.ip }}</div>
+        <div style="font-family:var(--mono);font-size:.66rem;color:var(--t2);">{{ h.ip }}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;">
+      {% for p in h.ports|j %}<span class="pt">{{ p }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card cb" style="text-align:center;color:var(--t2);padding:40px;">Aucun hôte — lancez un scan</div>
+{% endif %}
+{% endblock %}

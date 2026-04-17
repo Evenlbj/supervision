@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="fr"><head>
+<meta charset="UTF-8"><title>supervision reseau</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#07090f;font-family:'Syne',sans-serif;height:100vh;display:flex;align-items:center;justify-content:center;background-image:radial-gradient(ellipse at 20% 50%,rgba(79,142,247,.12),transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(139,92,246,.08),transparent 50%);}
+.box{background:#0d1422;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:36px;width:330px;}
+.logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:24px;}
+.ico{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#4f8ef7,#7c3aed);display:flex;align-items:center;justify-content:center;}
+h1{font-size:1.1rem;font-weight:800;color:#fff;}
+p{text-align:center;font-size:.74rem;color:#3a5070;margin-bottom:20px;}
+label{display:block;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#2a3f5f;margin-bottom:4px;}
+input{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:9px 12px;color:#dde8f5;font-family:'Syne',sans-serif;font-size:.83rem;outline:none;margin-bottom:12px;transition:border-color .2s;}
+input:focus{border-color:#4f8ef7;}
+.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171;padding:9px 12px;border-radius:8px;font-size:.77rem;margin-bottom:12px;}
+button{width:100%;padding:10px;border-radius:8px;background:linear-gradient(135deg,#4f8ef7,#3b82f6);color:#fff;font-family:'Syne',sans-serif;font-size:.83rem;font-weight:700;border:none;cursor:pointer;transition:all .18s;}
+button:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(79,142,247,.4);}
+</style>
+</head><body>
+<div class="box">
+  <div class="logo">
+    <div class="ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <h1>Supervision Reseau</h1>
+  </div>
+  <p>Supervision réseau v2.5</p>
+  {% if err %}<div class="err">{{ err }}</div>{% endif %}
+  <form method="POST">
+    <label>Identifiant</label>
+    <input type="text" name="username" placeholder="admin" autofocus>
+    <label>Mot de passe</label>
+    <input type="password" name="password" placeholder="••••••••••••">
+    <button>Se connecter →</button>
+  </form>
+</div>
+</body></html>

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Compte{% endblock %}
+{% block content %}
+<div style="max-width:420px;display:flex;flex-direction:column;gap:12px;">
+{% if ok %}<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:#34d399;padding:10px 14px;border-radius:9px;font-size:.78rem;">✓ {{ ok }}</div>{% endif %}
+<div class="card cb">
+  <div style="font-size:.83rem;font-weight:700;margin-bottom:13px;">Informations</div>
+  {% for l,v,c in [('Identifiant',user.username,'#dde8f5'),('Rôle',user.role,'#34d399'),('Connexion','admin / Loucaclara27062015+','#4a6285')] %}
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:7px;">
+    <span style="font-size:.77rem;color:var(--t2);">{{ l }}</span>
+    <span style="font-size:.78rem;font-weight:700;color:{{ c }};">{{ v }}</span>
+  </div>
+  {% endfor %}
+</div>
+<div class="card cb">
+  <div style="font-size:.83rem;font-weight:700;margin-bottom:12px;">Changer le mot de passe</div>
+  <form method="POST">
+    <input type="hidden" name="action" value="password">
+    <label style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--t2);display:block;margin-bottom:5px;">Nouveau mot de passe (min. 8 car.)</label>
+    <input class="fi" type="password" name="new" placeholder="••••••••" style="margin-bottom:8px;" oninput="c(this.value)">
+    <div style="height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;margin-bottom:12px;"><div id="sb" style="height:100%;border-radius:2px;width:0;transition:all .3s;"></div></div>
+    <button type="submit" class="btn bp">Enregistrer</button>
+  </form>
+</div>
+<div class="card cb" style="font-size:.77rem;">
+  <div style="font-size:.83rem;font-weight:700;color:var(--t1);margin-bottom:11px;">Stack technique</div>
+  {% for k,v in [('Backend','Flask + Python 3.11'),('BDD','SQLite 3 — netsuper.db'),('Scanner','Sockets TCP Python natifs'),('Sécurité','SHA-256 + sessions Flask'),('Frontend','HTML/CSS/JS + Chart.js'),('ESP32','Sonde WiFi — badge temps réel')] %}
+  <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);"><span style="color:var(--t2);">{{ k }}</span><span style="font-weight:600;">{{ v }}</span></div>
+  {% endfor %}
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>function c(v){const s=[v.length>=8,/[A-Z]/.test(v),/[0-9]/.test(v),/[^a-zA-Z0-9]/.test(v)].filter(Boolean).length;const b=document.getElementById('sb');b.style.width=s*25+'%';b.style.background=s<=1?'#ef4444':s<=2?'#f97316':s===3?'#eab308':'#10b981';}</script>
+{% endblock %}

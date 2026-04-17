@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block head %}
+<style>
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px;}
+.kpi{background:#0d1422;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;}
+.kn{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;line-height:1;}
+.kl{font-size:.6rem;color:#4a6285;text-transform:uppercase;letter-spacing:.5px;margin-top:6px;}
+.bar-wrap{height:4px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:8px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width .6s;}
+</style>
+{% endblock %}
+{% block content %}
+{% set crit = cves|selectattr('severity','equalto','CRITICAL')|list|length %}
+{% set high = cves|selectattr('severity','equalto','HIGH')|list|length %}
+{% set risk = [crit*12 + high*5, 100]|min %}
+<div class="kpis">
+  <div class="kpi">
+    <div class="kn" style="color:#4f8ef7">{{ up }}<span style="font-size:1rem;color:#4a6285;">/{{ tot }}</span></div>
+    <div class="kl">Hôtes actifs</div>
+    <div class="bar-wrap"><div class="bar-fill" style="width:{{ (up/[tot,1]|max*100)|int }}%;background:#4f8ef7"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kn" style="color:#ef4444">{{ cves|length }}</div>
+    <div class="kl">CVE enregistrées · {{ crit }} critiques</div>
+    <div class="bar-wrap"><div class="bar-fill" style="width:{{ (crit/[cves|length,1]|max*100)|int }}%;background:#ef4444"></div></div>
+  </div>
+  <div class="kpi">
+    <div class="kn" style="color:{% if risk>=80 %}#ef4444{% elif risk>=50 %}#f97316{% else %}#10b981{% endif %}">{{ risk }}</div>
+    <div class="kl">Score de risque / 100</div>
+    <div class="bar-wrap"><div class="bar-fill" style="width:{{ risk }}%;background:{% if risk>=80 %}#ef4444{% elif risk>=50 %}#f97316{% else %}#10b981{% endif %}"></div></div>
+  </div>
+</div>
+<div class="card">
+  <div class="ch">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <span class="ct-t">Vulnérabilités CVE</span>
+    <span style="margin-left:auto;font-size:.7rem;color:#4a6285;">{{ cves|length }} entrée(s)</span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>CVE ID</th><th>Score</th><th>Sévérité</th><th>Description</th></tr></thead>
+    <tbody>
+    {% for c in cves %}
+    <tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#60a5fa;">{{ c.cve_id }}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px;">
+          <div style="width:36px;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;border-radius:2px;width:{{ (c.score/10*100)|int }}%;background:{% if c.score>=9 %}#ef4444{% elif c.score>=7 %}#f97316{% elif c.score>=4 %}#fbbf24{% else %}#10b981{% endif %}"></div>
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.74rem;font-weight:700;">{{ c.score }}</span>
+        </div>
+      </td>
+      <td><span class="bg b{{ c.severity[0]|lower }}">{{ c.severity }}</span></td>
+      <td style="color:#4a6285;font-size:.74rem;">{{ c.desc }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

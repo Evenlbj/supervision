@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Scanner{% endblock %}
+{% block head %}
+<style>
+.sg{display:grid;grid-template-columns:230px 1fr;gap:14px;}
+.term{background:#040912;border:1px solid var(--b);border-radius:10px;height:260px;overflow-y:auto;padding:12px;font-family:var(--mono);font-size:.72rem;line-height:1.8;}
+.tok{color:#34d399;}.th{color:#60a5fa;font-weight:700;}.terr{color:#f87171;}
+.pb{height:4px;background:rgba(255,255,255,.05);border-radius:2px;margin:10px 0 5px;overflow:hidden;}
+.pf{height:100%;background:#4f8ef7;border-radius:2px;transition:width .3s;}
+.led{width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 5px rgba(16,185,129,.5);display:inline-block;margin-right:6px;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="sg">
+  <div class="card cb">
+    <div style="font-size:.83rem;font-weight:700;margin-bottom:12px;">Configuration</div>
+    <label style="font-size:.6rem;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Cible (IP ou CIDR)</label>
+    <input class="fi" id="target" value="10.1.40.0/24" style="margin-bottom:12px;">
+    <div style="display:flex;gap:7px;">
+      <button class="btn bp" id="go" onclick="startScan()">▶ Scan réel</button>
+      <button class="btn bg2" id="demo" onclick="demoScan()">⚡ Démo</button>
+    </div>
+    <div class="pb"><div class="pf" id="pf" style="width:0"></div></div>
+    <div style="font-size:.62rem;color:var(--t2);" id="ptxt">En attente...</div>
+  </div>
+  <div class="card cb">
+    <div style="font-size:.83rem;font-weight:700;margin-bottom:9px;">Terminal</div>
+    <div class="term" id="term"></div>
+  </div>
+</div>
+<div id="res" style="display:none;margin-top:14px;">
+  <div class="card">
+    <div class="ch"><span class="ct-t" id="rtitle">Résultats</span><a href="/hosts" class="btn bg2" style="margin-left:auto;font-size:.72rem;padding:5px 10px;">Voir les hôtes →</a></div>
+    <table class="tbl"><thead><tr><th>Statut</th><th>Hostname</th><th>IP</th><th>Ports</th></tr></thead><tbody id="rb"></tbody></table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const SVC={22:'SSH',80:'HTTP',443:'HTTPS',445:'SMB',3306:'MySQL',3389:'RDP',5000:'Flask'};
+let poll=null;
+function log(m,c){const t=document.getElementById('term'),d=document.createElement('div');d.className=c||'';d.textContent=m;t.appendChild(d);t.scrollTop=t.scrollHeight;}
+function prog(n){document.getElementById('pf').style.width=n+'%';document.getElementById('ptxt').textContent=n+'%';}
+function showRes(hosts){
+  document.getElementById('res').style.display='';
+  document.getElementById('rtitle').textContent='Résultats — '+hosts.length+' hôte(s)';
+  document.getElementById('rb').innerHTML=hosts.map(h=>'<tr><td><span class="led"></span>En ligne</td><td style="font-weight:700">'+h.hostname+'</td><td style="font-family:var(--mono);font-size:.7rem;color:var(--t2)">'+h.ip+'</td><td>'+h.ports.map(p=>'<span class="bg blo" style="margin:1px 3px">'+p+(SVC[p]?' <span style=color:var(--t2)>'+SVC[p]+'</span>':'')+'</span>').join('')+'</td></tr>').join('');
+}
+async function startScan(){
+  clearInterval(poll);
+  document.getElementById('go').disabled=true;
+  document.getElementById('term').innerHTML='';
+  document.getElementById('res').style.display='none';
+  prog(0);
+  log('▶ Scan sur : '+document.getElementById('target').value,'th');
+  const{job_id}=await fetch('/api/scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target:document.getElementById('target').value})}).then(r=>r.json());
+  let last=0;
+  poll=setInterval(async()=>{
+    const s=await fetch('/api/scan/status/'+job_id).then(r=>r.json());
+    s.log.slice(last).forEach(l=>log(l,l.startsWith('✓')?'tok':l.startsWith(' ')?'':'th'));
+    last=s.log.length;prog(s.progress);
+    if(s.status==='done'){
+      clearInterval(poll);document.getElementById('go').disabled=false;
+      prog(100);log('✓ Terminé — '+s.hosts.length+' hôte(s)','tok');
+      if(s.hosts.length)showRes(s.hosts);
+      else log('Aucun hôte — essayez Démo','terr');
+    }
+  },800);
+}
+async function demoScan(){
+  document.getElementById('go').disabled=true;document.getElementById('demo').disabled=true;
+  document.getElementById('term').innerHTML='';document.getElementById('res').style.display='none';prog(0);
+  const hosts=[
+    {ip:'10.1.40.1',hostname:'gateway.local',ports:[80,443]},
+    {ip:'10.1.40.8',hostname:'debian-netsuper',ports:[22,5000]},
+    {ip:'10.1.40.10',hostname:'srv-web.local',ports:[22,80,443]},
+    {ip:'10.1.40.15',hostname:'srv-bdd.local',ports:[22,3306]},
+    {ip:'10.1.40.20',hostname:'poste-admin.local',ports:[22,3389]},
+  ];
+  log('▶ Scan démo sur 10.1.40.0/24','th');
+  for(let i=1;i<=10;i++){prog(i*4);await sleep(70);}
+  for(const h of hosts){log('✓ '+h.ip+' répond','tok');await sleep(130);}
+  log(hosts.length+' hôtes actifs','th');
+  for(let i=0;i<hosts.length;i++){
+    prog(50+Math.round(i/hosts.length*48));
+    log('  '+hosts[i].ip+' — ports: '+hosts[i].ports.join(', '));
+    await sleep(180);
+    await fetch('/api/scan/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(hosts[i])}).catch(()=>{});
+  }
+  prog(100);log('✓ Terminé — '+hosts.length+' hôte(s) sauvegardé(s)','tok');
+  showRes(hosts);
+  document.getElementById('go').disabled=false;document.getElementById('demo').disabled=false;
+}
+</script>
+{% endblock %}
