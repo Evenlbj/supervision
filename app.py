@@ -17,6 +17,7 @@ def init():
     c.executescript('''
         CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT);
         CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname TEXT, ip TEXT UNIQUE, status TEXT DEFAULT "unknown", ports TEXT DEFAULT "[]");
+        CREATE TABLE IF NOT EXISTS esp32(id INTEGER PRIMARY KEY, ip TEXT, rssi INTEGER, uptime INTEGER, seen TEXT);
         CREATE TABLE IF NOT EXISTS cves(id INTEGER PRIMARY KEY, cve_id TEXT, score REAL, severity TEXT, desc TEXT);
     ''')
     c.execute('INSERT OR IGNORE INTO users(username,password) VALUES(?,?)', ('admin', PWD))
@@ -148,6 +149,29 @@ def do_scan(jid, target):
     job['status']   = 'done'
     job['progress'] = 100
 
+
+@app.route('/api/esp32/ping', methods=['POST'])
+def api_esp32_ping():
+    if request.headers.get('X-API-Key') != 'netsuper-esp32-2025':
+        return jsonify({'error': '401'}), 401
+    d = request.get_json() or {}
+    c = db()
+    c.execute('DELETE FROM esp32')
+    c.execute('INSERT INTO esp32(ip,rssi,uptime,seen) VALUES(?,?,?,?)',
+              (d.get('ip'), d.get('rssi', 0), d.get('uptime', 0),
+               datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    c.commit(); c.close()
+    return jsonify({'ok': True})
+
+@app.route('/api/esp32/badge')
+def api_esp32_badge():
+    c = db()
+    try:    r = c.execute('SELECT * FROM esp32 ORDER BY seen DESC LIMIT 1').fetchone()
+    except: r = None
+    c.close()
+    if not r: return jsonify({'online': False})
+    online = (datetime.datetime.now() - datetime.datetime.strptime(r['seen'], '%Y-%m-%d %H:%M:%S')).total_seconds() < 120
+    return jsonify({'online': online, 'ip': r['ip'], 'rssi': r['rssi']})
 if __name__ == '__main__':
     init()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000, ssl_context=('cert.pem', 'key.pem'))

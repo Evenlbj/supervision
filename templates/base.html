@@ -13,7 +13,7 @@ nav{flex:1;display:flex;flex-direction:column;gap:2px;}
 .lk:hover{background:rgba(255,255,255,.04);color:#dde8f5;}
 .lk.on{background:rgba(79,142,247,.1);color:#4f8ef7;}
 .lk.on::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:0 2px 2px 0;background:#4f8ef7;}
-.user{border-top:1px solid rgba(255,255,255,.07);padding-top:10px;margin-top:8px;display:flex;align-items:center;gap:8px;}
+.user{padding-top:6px;display:flex;align-items:center;gap:8px;}
 .av{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.74rem;flex-shrink:0;}
 .main{flex:1;display:flex;flex-direction:column;}
 .bar{height:46px;background:#0d1422;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 18px;gap:8px;font-size:.8rem;}
@@ -69,6 +69,82 @@ nav{flex:1;display:flex;flex-direction:column;gap:2px;}
   </div>
   <div class="ct">{% block content %}{% endblock %}</div>
 </div>
-<script>function sleep(ms){return new Promise(r=>setTimeout(r,ms));}</script>
+<div id="eb" style="position:fixed;bottom:0;left:0;right:0;z-index:999;display:none;justify-content:center;">
+  <div style="display:inline-flex;align-items:center;gap:0;background:#07090f;border:1px solid rgba(16,185,129,.3);border-bottom:none;border-radius:14px 14px 0 0;overflow:hidden;box-shadow:0 -4px 30px rgba(0,0,0,.5);">
+    <!-- Titre -->
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 16px;border-right:1px solid rgba(255,255,255,.06);background:rgba(16,185,129,.07);">
+      <div style="position:relative;display:flex;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="15" x2="4" y2="15"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="15" x2="22" y2="15"/></svg>
+        <div style="position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:#10b981;border:1.5px solid #07090f;animation:ep 1.5s infinite;"></div>
+      </div>
+      <span style="font-size:.7rem;font-weight:800;color:#34d399;letter-spacing:.5px;">ESP32</span>
+      <span style="font-size:.58rem;padding:1px 6px;border-radius:4px;background:rgba(16,185,129,.15);color:#34d399;font-weight:700;">EN LIGNE</span>
+    </div>
+    <!-- IP -->
+    <div style="padding:9px 14px;border-right:1px solid rgba(255,255,255,.06);text-align:center;">
+      <div style="font-size:.52rem;color:#2a4060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Adresse IP</div>
+      <div id="ei-ip" style="font-family:monospace;font-size:.74rem;font-weight:700;color:#60a5fa;">—</div>
+    </div>
+    <!-- Signal -->
+    <div style="padding:9px 14px;border-right:1px solid rgba(255,255,255,.06);text-align:center;">
+      <div style="font-size:.52rem;color:#2a4060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Signal WiFi</div>
+      <div style="display:flex;align-items:center;gap:6px;justify-content:center;">
+        <div id="ei-bars" style="display:flex;align-items:flex-end;gap:2px;height:12px;"></div>
+        <div id="ei-rssi" style="font-family:monospace;font-size:.74rem;font-weight:700;">—</div>
+      </div>
+    </div>
+    <!-- RAM -->
+    <div style="padding:9px 14px;border-right:1px solid rgba(255,255,255,.06);text-align:center;">
+      <div style="font-size:.52rem;color:#2a4060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">RAM libre</div>
+      <div id="ei-ram" style="font-family:monospace;font-size:.74rem;font-weight:700;color:#a78bfa;">—</div>
+    </div>
+    <!-- Uptime -->
+    <div style="padding:9px 14px;border-right:1px solid rgba(255,255,255,.06);text-align:center;">
+      <div style="font-size:.52rem;color:#2a4060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Uptime</div>
+      <div id="ei-up" style="font-family:monospace;font-size:.74rem;font-weight:700;color:#dde8f5;">—</div>
+    </div>
+    <!-- Dernière màj -->
+    <div style="padding:9px 14px;text-align:center;">
+      <div style="font-size:.52rem;color:#2a4060;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Dernière màj</div>
+      <div id="ei-t" style="font-family:monospace;font-size:.74rem;font-weight:700;color:#dde8f5;">—</div>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes ep{0%,100%{box-shadow:0 0 5px rgba(16,185,129,.5);}50%{box-shadow:0 0 12px rgba(16,185,129,1);}}
+</style>
+<script>
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function rssiColor(r){return r>=-60?'#34d399':r>=-75?'#fb923c':'#f87171';}
+function rssiBars(r){
+  const pct=Math.min(Math.max((r+100)/70*100,0),100);
+  const filled=Math.round(pct/25);
+  const col=rssiColor(r);
+  return [1,2,3,4].map(i=>`<div style="width:4px;height:${i*3}px;border-radius:1px;background:${i<=filled?col:'rgba(255,255,255,.1)'};"></div>`).join('');
+}
+function ce(){
+  fetch('/api/esp32/badge').then(r=>r.json()).then(d=>{
+    const b=document.getElementById('eb');
+    if(d.online){
+      b.style.display='flex';
+      document.getElementById('ei-ip').textContent=d.ip||'—';
+      const rssi=d.rssi||0;
+      document.getElementById('ei-bars').innerHTML=rssiBars(rssi);
+      document.getElementById('ei-rssi').textContent=rssi+'dBm';
+      document.getElementById('ei-rssi').style.color=rssiColor(rssi);
+      const up=d.uptime||0;
+      const h=Math.floor(up/3600),m=Math.floor((up%3600)/60),s=up%60;
+      document.getElementById('ei-up').textContent=(h?h+'h':'')+String(m).padStart(2,'0')+'m'+String(s).padStart(2,'0')+'s';
+      const ram=d.free_heap?Math.round(d.free_heap/1024)+'Ko':'—';
+      document.getElementById('ei-ram').textContent=ram;
+      document.getElementById('ei-t').textContent=new Date().toLocaleTimeString('fr-FR');
+    } else {
+      b.style.display='none';
+    }
+  }).catch(()=>{});
+}
+ce();setInterval(ce,10000);
+</script>
+</script>
 {% block scripts %}{% endblock %}
 </body></html>
