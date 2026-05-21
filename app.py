@@ -3,7 +3,7 @@ import sqlite3, hashlib, os, json, time, threading, socket, subprocess, datetime
 
 app = Flask(__name__)
 app.secret_key = 'ns2025'
-DB  = os.path.join(os.path.dirname(__file__), 'netsuper.db')
+DB  = os.path.join(os.path.dirname(__file__), 'supervision.db')
 JOBS = {}
 PWD  = hashlib.sha256('Loucaclara27062015+'.encode()).hexdigest()
 
